@@ -1,3 +1,7 @@
+"""Dashboard for local permits.
+
+See https://live-durhamnc.opendata.arcgis.com/datasets/DurhamNC::all-building-permits/about
+"""
 import datetime
 
 import pandas as pd
@@ -5,10 +9,13 @@ import streamlit as st
 from st_aggrid import AgGrid, GridUpdateMode, GridOptionsBuilder
 
 
-@st.cache_data(ttl=300)
+@st.cache_data(ttl=3600)
 def get_df():
-    # From https://live-durhamnc.opendata.arcgis.com/datasets/DurhamNC::all-building-permits/about
-    df = pd.read_csv("./All_Building_Permits.csv", low_memory=False)
+    # URL might be tied to a point in time ...
+    df = pd.read_csv(
+        "https://opendata.arcgis.com/api/v3/datasets/12d468d8ff5f4f849ba6a07e0c96c40f_12/downloads/data?format=csv&spatialRefId=4326&where=1%3D1",
+        low_memory=False,
+    )
     df = (
         df.assign(ISSUE_DATE=pd.to_datetime(df.ISSUE_DATE))
         .filter(

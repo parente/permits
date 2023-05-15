@@ -2,7 +2,6 @@
 help:
 	@just --list --unsorted
 
-
 # Clean the source tree
 clean:
 	rm -rf .venv
