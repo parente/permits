@@ -6,7 +6,6 @@ import datetime
 
 import pandas as pd
 import streamlit as st
-from st_aggrid import AgGrid, GridUpdateMode, GridOptionsBuilder
 
 
 @st.cache_data(ttl=3600)
