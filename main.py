@@ -12,7 +12,7 @@ import streamlit as st
 def get_df():
     # URL might be tied to a point in time ...
     df = pd.read_csv(
-        "https://opendata.arcgis.com/api/v3/datasets/12d468d8ff5f4f849ba6a07e0c96c40f_12/downloads/data?format=csv&spatialRefId=4326&where=1%3D1",
+        "https://opendata.arcgis.com/api/v3/datasets/84d10c7d0a324a39987edaef9910847f_2/downloads/data?format=csv&spatialRefId=4326&where=1%3D1"
         low_memory=False,
     )
     df = (
