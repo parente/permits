@@ -2,7 +2,8 @@
 
 See https://live-durhamnc.opendata.arcgis.com/datasets/DurhamNC::all-building-permits/about
 """
-import datetime
+
+from datetime import datetime, timedelta, UTC
 
 import pandas as pd
 import streamlit as st
@@ -42,14 +43,14 @@ def main():
     st.title("Durham Permits")
 
     df = get_df()
-    utcnow = datetime.datetime.utcnow()
+    utcnow = datetime.now(UTC)
 
     a, b, c, d = st.columns(4)
     with a:
         date_range = st.date_input(
             label="Dates",
             min_value=df.ISSUE_DATE.min(),
-            value=(utcnow - datetime.timedelta(days=365 * 4), utcnow),
+            value=(utcnow - timedelta(days=365 * 4), utcnow),
         )
     with b:
         bld_type = st.multiselect(
@@ -77,7 +78,7 @@ def main():
     st.caption(f"{len(df)} matching permits")
     a, b = st.columns(2)
     with a:
-        map_df = st.experimental_data_editor(df, use_container_width=True)
+        map_df = st.data_editor(df, use_container_width=True)
     with b:
         st.map(map_df[map_df["MAP?"]][["lat", "lon"]])
 
