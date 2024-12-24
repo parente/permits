@@ -1,10 +1,11 @@
-"""Dashboard for local permits.
+"""Dashboard for Durham, NC building permits.
 
-See https://live-durhamnc.opendata.arcgis.com/datasets/DurhamNC::all-building-permits/about
+See https://live-durhamnc.opendata.arcgis.com/datasets/DurhamNC::all-building-permits/about for
+data source details.
 """
 
-from datetime import datetime, timedelta, UTC
 import math
+from datetime import datetime, timedelta, UTC
 
 import pandas as pd
 import pydeck as pdk
