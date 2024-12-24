@@ -55,6 +55,13 @@ def query(
     )
 
 
+def reset_table():
+    """Clears a table selection by generating a new table ID.
+
+    There's no other way at present to clear a table selection in Streamlit."""
+    st.session_state.table_idx = st.session_state.get("table_idx", 0) + 1
+
+
 def on_table_select():
     """Updates the selected dataframe row in state when a table row is selected."""
     df = st.session_state.df
@@ -62,21 +69,30 @@ def on_table_select():
     table = st.session_state[key]
     if table.selection.rows:
         st.session_state.selected_df = df.iloc[table.selection.rows]
-    else:
-        del st.session_state["selected_df"]
+    elif "selected_df" in st.session_state:
+        del st.session_state.selected_df
 
 
 def on_map_select():
     """Clears the table selection and updates the selected dataframe row in state when a map point
     is selected."""
+    reset_table()
     df = st.session_state.df
-    st.session_state.table_idx = st.session_state.get("table_idx", 0) + 1
     if "scatterplot" in st.session_state.map.selection.indices:
         st.session_state.selected_df = df.iloc[
             st.session_state.map.selection.indices["scatterplot"]
         ]
-    else:
-        del st.session_state["selected_df"]
+    elif "selected_df" in st.session_state:
+        del st.session_state.selected_df
+
+
+def on_filter_change():
+    """Clears all table and map selections when any of the initial filters change."""
+    reset_table()
+    if "df" in st.session_state:
+        del st.session_state.df
+    if "selected_df" in st.session_state:
+        del st.session_state.selected_df
 
 
 def main():
