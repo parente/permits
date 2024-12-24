@@ -50,9 +50,13 @@ def query(
 
     df = pd.DataFrame(all_rows)
     return (
-        df.assign(ISSUE_DATE=pd.to_datetime(df.ISSUE_DATE, unit="ms"))
-        .rename(columns={"x": "lon", "y": "lat"})
-        .sort_values("ISSUE_DATE", ascending=False)
+        (
+            df.assign(ISSUE_DATE=pd.to_datetime(df.ISSUE_DATE, unit="ms"))
+            .rename(columns={"x": "lon", "y": "lat"})
+            .sort_values("ISSUE_DATE", ascending=False)
+        )
+        if len(df)
+        else df
     )
 
 
@@ -118,6 +122,11 @@ def main():
 
     df = query(date_range)
 
+    # Show the number of matching permits
+    st.caption(f"{len(df)} matching permits")
+    if not len(df):
+        return
+
     # Show additional filters for permit type, activity, and comment/description text
     with b:
         bld_type = st.multiselect(
@@ -149,9 +158,6 @@ def main():
             | df.COMMENTS.str.contains(text, case=False)
         )
     ]
-
-    # Show the matches in a map and table after initial filtering
-    st.caption(f"{len(df)} matching permits")
 
     a, b = st.columns(2)
     with a:
@@ -192,7 +198,7 @@ def main():
                 get_color="[255, 90, 255, 160]",
                 pickable=True,
                 auto_highlight=True,
-                get_radius=600 / zoom,
+                get_radius=700 / zoom,
             ),
         ],
     )
