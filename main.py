@@ -18,7 +18,7 @@ def query(
     max_per_page: int = 2000,
     max_pages: int = 100,
 ) -> pd.DataFrame:
-    """Fetch GeoJSON pages of permit data from Durham's ArcGIS server."""
+    """Fetches GeoJSON pages of permit data from Durham's ArcGIS server."""
     all_rows = []
     for i in range(max_pages):
         params = {
@@ -97,16 +97,18 @@ def on_filter_change():
 
 def main():
     st.set_page_config(layout="wide")
-    st.title("Durham Permits")
+    st.title("Durham, NC Permits")
 
     a, b, c, d = st.columns(4)
 
     # Filter the ArcGIS query by a date range
     utcnow = datetime.now(UTC)
     date_range = a.date_input(
-        label="Dates",
+        label="Date Issued",
         min_value=datetime(2007, 1, 1),
         value=(utcnow.date() - timedelta(days=90), utcnow.date()),
+        on_change=on_filter_change,
+        help="Defaults to the last 90 days",
     )
 
     # Use today's date for the upper bound if one is not selected
@@ -118,14 +120,24 @@ def main():
     # Show additional filters for permit type, activity, and comment/description text
     with b:
         bld_type = st.multiselect(
-            "Type", options=df.TYPE.drop_duplicates().sort_values()
+            "Type",
+            placeholder="Filter by building type",
+            options=df.TYPE.drop_duplicates().sort_values(),
+            on_change=on_filter_change,
         )
     with c:
         activity = st.multiselect(
-            "Activity", options=df.BLDB_ACTIVITY_1.drop_duplicates().sort_values()
+            "Activity",
+            placeholder="Filter by activity",
+            options=df.BLDB_ACTIVITY_1.drop_duplicates().sort_values(),
+            on_change=on_filter_change,
         )
     with d:
-        text = st.text_input("Text")
+        text = st.text_input(
+            "Text",
+            placeholder="Filter by description or comment text",
+            on_change=on_filter_change,
+        )
 
     # Perform all other filtering locally
     st.session_state.df = df = df[
