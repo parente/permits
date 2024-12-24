@@ -4,6 +4,7 @@ See https://live-durhamnc.opendata.arcgis.com/datasets/DurhamNC::all-building-pe
 """
 
 from datetime import datetime, timedelta, UTC
+import math
 
 import pandas as pd
 import pydeck as pdk
@@ -96,6 +97,12 @@ def main():
         )
     ]
 
+    # Calculate bounds-based zoom
+    longitude_range = df.lon.max() - df.lon.min()
+    latitude_range = df.lat.max() - df.lat.min()
+    angle = max(longitude_range, latitude_range) * 1.0  # Padding
+    zoom = min(max(math.log2(360 / angle), 8), 15)  # Clamp between zoom 8 and 15
+
     # Show the matches after filtering
     st.caption(f"{len(df)} matching permits")
 
@@ -105,7 +112,7 @@ def main():
         initial_view_state=pdk.ViewState(
             latitude=df.lat.mean(),
             longitude=df.lon.mean(),
-            zoom=15 if len(df) <= 1 else 11,
+            zoom=zoom,
         ),
         layers=[
             pdk.Layer(
