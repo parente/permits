@@ -55,6 +55,30 @@ def query(
     )
 
 
+def on_table_select():
+    """Updates the selected dataframe row in state when a table row is selected."""
+    df = st.session_state.df
+    key = f"table_{st.session_state.get('table_idx', 0)}"
+    table = st.session_state[key]
+    if table.selection.rows:
+        st.session_state.selected_df = df.iloc[table.selection.rows]
+    else:
+        del st.session_state["selected_df"]
+
+
+def on_map_select():
+    """Clears the table selection and updates the selected dataframe row in state when a map point
+    is selected."""
+    df = st.session_state.df
+    st.session_state.table_idx = st.session_state.get("table_idx", 0) + 1
+    if "scatterplot" in st.session_state.map.selection.indices:
+        st.session_state.selected_df = df.iloc[
+            st.session_state.map.selection.indices["scatterplot"]
+        ]
+    else:
+        del st.session_state["selected_df"]
+
+
 def main():
     st.set_page_config(layout="wide")
     st.title("Durham Permits")
@@ -75,7 +99,7 @@ def main():
 
     df = query(date_range)
 
-    # Show additional filters for permit type, activity, and commnent/description text
+    # Show additional filters for permit type, activity, and comment/description text
     with b:
         bld_type = st.multiselect(
             "Type", options=df.TYPE.drop_duplicates().sort_values()
@@ -88,7 +112,7 @@ def main():
         text = st.text_input("Text")
 
     # Perform all other filtering locally
-    df = df[
+    st.session_state.df = df = df[
         (df.TYPE.isin(bld_type) if bld_type else True)
         & (df.BLDB_ACTIVITY_1.isin(activity) if activity else True)
         & (
@@ -97,21 +121,37 @@ def main():
         )
     ]
 
-    # Calculate bounds-based zoom
-    longitude_range = df.lon.max() - df.lon.min()
-    latitude_range = df.lat.max() - df.lat.min()
-    angle = max(longitude_range, latitude_range) * 1.0  # Padding
-    zoom = min(max(math.log2(360 / angle), 8), 15)  # Clamp between zoom 8 and 15
-
-    # Show the matches after filtering
+    # Show the matches in a map and table after initial filtering
     st.caption(f"{len(df)} matching permits")
+
+    a, b = st.columns(2)
+    with a:
+        # Show whole data frame in a table for selection
+        st.dataframe(
+            key=f"table_{st.session_state.get('table_idx', 0)}",
+            data=df,
+            use_container_width=True,
+            hide_index=True,
+            height=500,
+            selection_mode="single-row",
+            on_select=on_table_select,
+        )
+
+    # Calculate bounds-based zoom for the table selected subset only
+    map_focus_df = (
+        st.session_state.selected_df if "selected_df" in st.session_state else df
+    )
+    longitude_range = map_focus_df.lon.max() - map_focus_df.lon.min()
+    latitude_range = map_focus_df.lat.max() - map_focus_df.lat.min()
+    angle = max(longitude_range, latitude_range)
+    zoom = min(max(math.log2(360 / angle), 8), 15) if angle else 15
 
     # Render a map of all the locations with lat, lon
     deck = pdk.Deck(
         map_style=None,
         initial_view_state=pdk.ViewState(
-            latitude=df.lat.mean(),
-            longitude=df.lon.mean(),
+            latitude=map_focus_df.lat.mean(),
+            longitude=map_focus_df.lon.mean(),
             zoom=zoom,
         ),
         layers=[
@@ -123,32 +163,25 @@ def main():
                 get_color="[255, 90, 255, 160]",
                 pickable=True,
                 auto_highlight=True,
-                get_radius=50,
+                get_radius=600 / zoom,
             ),
         ],
     )
 
-    a, b = st.columns(2)
-    with a:
-        event = st.pydeck_chart(
-            deck,
+    with b:
+        st.pydeck_chart(
+            key="map",
+            pydeck_obj=deck,
             selection_mode="single-object",
-            on_select="rerun",
+            on_select=on_map_select,
             use_container_width=True,
         )
 
-    # Show filtered and/or map selected data points
-    with b:
-        st.dataframe(
-            data=(
-                df.iloc[event.selection.indices["scatterplot"]]
-                if event.selection.indices
-                else df
-            ),
-            use_container_width=True,
-            hide_index=True,
-            height=500,
-        )
+    # Show the details of the selected table row or map point
+    if "selected_df" in st.session_state:
+        st.table(st.session_state.selected_df.T.astype(str))
+    else:
+        st.markdown("_No row or point selected_")
 
 
 if __name__ == "__main__":
